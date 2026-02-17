@@ -1,4 +1,6 @@
-data/*
+data/external/*
+data/processed/*
+data/raw/*
 .env
 
 # Byte-compiled / optimized / DLL files
