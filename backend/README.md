@@ -29,7 +29,3 @@ Think of a function that is used to pick between two strings based on a few iden
 These kind of function can exist in a file in the `project_code/utils` folder to prevent
 muddying up our services. An example includes a `parse_utils.py` file that has
 generic functions that can be used to help parse string data.
-
-## UI
-The UI folder will contain all code related to front end UI. More explanation can
-be found in the `ui` folder that goes into detail about the UI specific to the project.
