@@ -4,9 +4,10 @@ import 'package:frontend/viewmodels/viewmodels_lib.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/widgets/exercise_info.dart';
 
-class ExerciseView extends StatelessWidget {
+class ExerciseInfoView extends StatelessWidget {
   final ExerciseViewModel exercise;
-  const ExerciseView({super.key, required this.exercise});
+  final ExerciseListViewModel favoriteExercises;
+  const ExerciseInfoView({super.key, required this.exercise, required this.favoriteExercises});
 
   Future<List<String>> _loadImages() async {
     final manifestJson = await rootBundle.loadString('AssetManifest.json');
@@ -34,6 +35,7 @@ class ExerciseView extends StatelessWidget {
         return ExerciseInfo(
           images: snapshot.data != null ? snapshot.data! : [],
           exercise: exercise,
+          favoriteExercises: favoriteExercises,
         );
       },
     );

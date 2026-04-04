@@ -27,7 +27,9 @@ class _ExerciseSearchViewState extends State<ExerciseSearchView> {
         SliverAppBar(
           floating: true,
           snap: true,
+          centerTitle: true,
           title: SearchBar(
+            leading: Icon(Icons.search),
             hintText: "Search exercises...",
             controller: textController,
           ),

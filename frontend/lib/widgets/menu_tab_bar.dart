@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/main.dart';
 import 'package:frontend/views/views_lib.dart';
 
 class MenuTabBar extends StatefulWidget {
@@ -26,7 +27,15 @@ class _MenuTabBarState extends State<MenuTabBar> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: TabBarView(
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('Iris: Physical Therapy Assistant'),
+        titleTextStyle: TextStyle(
+          fontSize: 30,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      body: TabBarView(
         controller: _tabController,
         children: [
           ExerciseSearchView(key: const PageStorageKey('all_exercises')),

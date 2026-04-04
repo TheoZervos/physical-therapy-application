@@ -17,7 +17,6 @@ class ExerciseViewModel extends ChangeNotifier {
 
   void toggleFavorite() {
     exercise.isFavorite = !exercise.isFavorite;
-    print(exercise.isFavorite);
     notifyListeners();
   }
 }

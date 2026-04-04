@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/viewmodels/viewmodels_lib.dart';
-import 'package:frontend/views/exercise_view.dart';
+import 'package:frontend/views/exercise_info_view.dart';
 import 'package:provider/provider.dart';
 
 class ExerciseListTile extends StatelessWidget {
@@ -57,7 +57,7 @@ class ExerciseListTile extends StatelessWidget {
       onTap: () {
         Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
-            builder: (context) => ExerciseView(exercise: exercise),
+            builder: (context) => ExerciseInfoView(exercise: exercise, favoriteExercises: userInfo.favoriteExercises),
           ),
         );
       },
@@ -78,16 +78,24 @@ class ExerciseScrollList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (exercises.exerciseList.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const SliverFillRemaining(
+        hasScrollBody: false, // Prevents unnecessary scroll behavior for a spinner
+        child: Center(
+          child: Text(
+            "This list is empty.",
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+      );
     }
 
     return SliverList(
       delegate: SliverChildListDelegate(
         exercises.exerciseList.map((exercise) {
-          return ChangeNotifierProvider<ExerciseViewModel>(
-            create: (_) => exercise,
-            child: ChangeNotifierProvider<UserInfoViewModel>(
-              create: (_) => userInfo,
+          return ChangeNotifierProvider<ExerciseViewModel>.value(
+            value: exercise,
+            child: ChangeNotifierProvider<UserInfoViewModel>.value(
+              value: userInfo,
               child: const ExerciseListTile(),
             ),
           );

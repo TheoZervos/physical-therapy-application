@@ -30,6 +30,7 @@ class _FavoriteExerciseSearchViewState extends State<FavoriteExerciseSearchView>
           floating: true,
           snap: true,
           title: SearchBar(
+            leading: Icon(Icons.search),
             hintText: "Search favorite exercises...",
             controller: textController,
           ),
