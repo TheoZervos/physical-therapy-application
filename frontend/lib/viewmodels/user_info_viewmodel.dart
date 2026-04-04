@@ -1,18 +1,20 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:frontend/viewmodels/viewmodels_lib.dart';
 
 class UserInfoViewModel extends ChangeNotifier {
   late final ExerciseHistoryViewModel exerciseHistory;
-  late final ExerciseListViewModel likedExercises;
+  late final ExerciseListViewModel favoriteExercises;
   String _name = "";
 
   Future<void> fetchUserInfo(String folderPath) async {
-    final ExerciseHistoryViewModel exerciseHistory = ExerciseHistoryViewModel();
-    final ExerciseListViewModel likedExercises = ExerciseListViewModel();
+    exerciseHistory = ExerciseHistoryViewModel();
+    favoriteExercises = ExerciseListViewModel();
     await exerciseHistory.fetchPastExerciseSessions(
       "$folderPath/exercise_history.json",
     );
-    await likedExercises.fetchExercises("$folderPath/liked_exercises.json");
+    await favoriteExercises.fetchExercises(
+      "$folderPath/favorite_exercises.json",
+    );
     notifyListeners();
   }
 
