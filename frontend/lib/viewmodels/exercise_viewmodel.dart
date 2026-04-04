@@ -1,20 +1,23 @@
+import 'package:flutter/material.dart';
 import 'package:frontend/models/exercise.dart';
 
-class ExerciseViewModel {
+class ExerciseViewModel extends ChangeNotifier {
   final Exercise exercise;
 
-  ExerciseViewModel({required this.exercise});
+  ExerciseViewModel(this.exercise);
 
-  String get exerciseName => exercise.exerciseName;
-  String get tutorialLink => exercise.tutorialLink;
-  String get exerciseDescription => exercise.exerciseDescription;
-  List<String> get exerciseImages => exercise.exerciseImages;
-  String get exerciseId => exercise.exerciseId;
-  List<String> get exerciseAliases => exercise.exerciseAliases;
-  List<String> get muscleRegions => exercise.muscleRegions;
-  bool get isFavorite => exercise.isFavorite;
+  get exerciseName => exercise.exerciseName;
+  get tutorialLink => exercise.tutorialLink;
+  get exerciseDescription => exercise.exerciseDescription;
+  get assetsFolder => exercise.assetsFolder;
+  get exerciseId => exercise.exerciseId;
+  get exerciseAliases => exercise.exerciseAliases;
+  get isFavorite => exercise.isFavorite;
+  get muscleRegions => exercise.muscleRegions;
 
-  void toggleExerciseFavorite() {
+  void toggleFavorite() {
     exercise.isFavorite = !exercise.isFavorite;
+    print(exercise.isFavorite);
+    notifyListeners();
   }
 }

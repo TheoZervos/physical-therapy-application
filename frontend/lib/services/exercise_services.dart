@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:frontend/models/models_lib.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/viewmodels/viewmodels_lib.dart';
 
 class ExerciseService {
   Future<Map<String, dynamic>> fetchExercises(String jsonFilePath) async {
@@ -12,19 +13,17 @@ class ExerciseService {
       return {'exercises': [], 'exercisesByMuscleRegion': {}};
     }
 
-    print(json);
-
     // getting exercises
     final List<Exercise> exercises = (json['exercises'] ?? [])
         .map<Exercise>((exerciseData) => Exercise.fromJson(exerciseData))
         .toList();
-    final Map<String, List<Exercise>> muscleGroupedExercises = {};
+    final Map<String, List<ExerciseViewModel>> muscleGroupedExercises = {};
 
     // grouping exercises by muscle region
     if (exercises.isNotEmpty) {
       for (final Map<String, dynamic> exerciseData
           in (json['exercises'] ?? [])) {
-        final Exercise exercise = Exercise.fromJson(exerciseData);
+        final ExerciseViewModel exercise = ExerciseViewModel(Exercise.fromJson(exerciseData));
         final List<String> muscleGroups = exercise.muscleRegions;
 
         for (final String muscleGroup in muscleGroups) {

@@ -1,10 +1,10 @@
-import "package:flutter/cupertino.dart";
-import "package:frontend/models/models_lib.dart";
-import "package:frontend/viewmodels/viewmodels_lib.dart";
+import "package:flutter/material.dart";
+import 'package:frontend/viewmodels/exercise_viewmodel.dart';
 import "package:frontend/services/exercise_services.dart";
 
 class ExerciseListViewModel extends ChangeNotifier {
-  late final ExerciseList exerciseList;
+  late final List<ExerciseViewModel> exerciseList;
+  late final Map<String, List<ExerciseViewModel>> exerciseByRegion;
   final Map<String, dynamic> filters = {"filters": {}};
 
   Future<void> fetchExercises(String jsonFilePath) async {
@@ -12,36 +12,60 @@ class ExerciseListViewModel extends ChangeNotifier {
 
     // empty exercise list
     if (results['exercises'].isEmpty) {
-      exerciseList = ExerciseList(exerciseList: [], exerciseByRegion: {});
+      exerciseList = <ExerciseViewModel>[];
+      exerciseByRegion = <String, List<ExerciseViewModel>>{};
       notifyListeners();
       return;
     }
 
-    // building list of exercises
-    List<Exercise> exercises = results['exercises'];
+    // creating exercise list object
+    exerciseList = results['exercises']
+        .map<ExerciseViewModel>((exercise) => ExerciseViewModel(exercise))
+        .toList();
+    exerciseByRegion = results['exercisesByMuscleRegion'];
+    notifyListeners();
+    return;
+  }
 
-    // building muscle regions list
-    Map<String, List<Exercise>> exercisesByMuscleRegion = {};
-    for (final Exercise exercise in exercises) {
-      for (final String muscleGroup in exercise.muscleRegions) {
-        if (!exercisesByMuscleRegion.containsKey(muscleGroup)) {
-          exercisesByMuscleRegion[muscleGroup] = [];
-        }
-        exercisesByMuscleRegion[muscleGroup]!.add(exercise);
+  void addExercise(ExerciseViewModel exercise) {
+    exerciseList.add(exercise);
+    for (final String muscleRegion in exercise.muscleRegions) {
+      if (exerciseByRegion.containsKey(muscleRegion)) {
+        exerciseByRegion[muscleRegion]!.add(exercise);
+      } else {
+        exerciseByRegion[muscleRegion] = [exercise];
       }
     }
-
-    // creating exercise list object
-    exerciseList = ExerciseList(
-      exerciseList: exercises,
-      exerciseByRegion: exercisesByMuscleRegion,
-    );
     notifyListeners();
   }
 
-  List<ExerciseViewModel> search(String searchQuery) {
-    List<Exercise> exercises = exerciseList.search(searchQuery);
-    return exercises.map((e) => ExerciseViewModel(exercise: e)).toList();
+  void removeExercise(ExerciseViewModel exercise) {
+    exerciseList.remove(exercise);
+    for (final String muscleRegion in exercise.muscleRegions) {
+      exerciseByRegion[muscleRegion]?.remove(exercise);
+    }
+    notifyListeners();
+  }
+
+  void clearExercises() {
+    exerciseList.clear();
+    exerciseByRegion.clear();
+    notifyListeners();
+  }
+
+  List<ExerciseViewModel> search(String query) {
+    List<ExerciseViewModel> directResults = exerciseList
+        .where((exercise) => exercise.exerciseName.contains(query))
+        .toList();
+
+    List<ExerciseViewModel> indirectResults = exerciseList
+        .where(
+          (exercise) =>
+              exercise.exerciseAliases.any((alias) => alias.contains(query)),
+        )
+        .toList();
+    notifyListeners();
+    return directResults + indirectResults;
   }
 
   // private void applyFilters() {}
