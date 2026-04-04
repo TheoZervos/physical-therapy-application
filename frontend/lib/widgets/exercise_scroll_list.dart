@@ -12,39 +12,46 @@ class ExerciseListTile extends StatelessWidget {
     final userInfo = context.watch<UserInfoViewModel>();
 
     return ListTile(
-      leading: Image(
-        image: AssetImage(
-          '${exercise.assetsFolder}/${exercise.exerciseName.toLowerCase().replaceAll(" ", "_")}_thumbnail.png',
-        ),
-        width: 100,
-        height: 100,
-      ),
-      minTileHeight: 100,
+      minTileHeight: 110,
       title: Center(
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              exercise.exerciseName,
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: Image(
+                image: AssetImage(
+                  '${exercise.assetsFolder}/${exercise.exerciseName.toLowerCase().replaceAll(" ", "_")}_thumbnail.png',
+                ),
+              )
             ),
-            Text(
-              exercise.muscleRegions.join(', '),
-              style: TextStyle(fontSize: 13),
+            Column(
+              children: [
+                Text(
+                  exercise.exerciseName,
+                  style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  exercise.muscleRegions.join(', '),
+                  style: TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+            MaterialButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                exercise.isFavorite
+                    ? userInfo.favoriteExercises.removeExercise(exercise)
+                    : userInfo.favoriteExercises.addExercise(exercise);
+                exercise.toggleFavorite();
+              },
+              child: Icon(
+                exercise.isFavorite ? Icons.favorite : Icons.favorite_border,
+                size: 40,
+              ),
             ),
           ],
-        ),
-      ),
-      trailing: MaterialButton(
-        padding: EdgeInsets.zero,
-        onPressed: () {
-          exercise.isFavorite
-              ? userInfo.favoriteExercises.removeExercise(exercise)
-              : userInfo.favoriteExercises.addExercise(exercise);
-          exercise.toggleFavorite();
-        },
-        child: Icon(
-          exercise.isFavorite ? Icons.favorite : Icons.favorite_border,
-          size: 40,
         ),
       ),
       onTap: () {

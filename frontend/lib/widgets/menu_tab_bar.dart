@@ -31,7 +31,7 @@ class _MenuTabBarState extends State<MenuTabBar> with TickerProviderStateMixin {
         children: [
           ExerciseSearchView(key: const PageStorageKey('all_exercises')),
           FavoriteExerciseSearchView(key: const PageStorageKey('favorites')),
-          Center(child: Text('Past Exercises')),
+          Center(child: Text('History')),
           Center(child: Text('Profile')),
         ],
       ),
@@ -44,7 +44,7 @@ class _MenuTabBarState extends State<MenuTabBar> with TickerProviderStateMixin {
           tabs: const [
             Tab(icon: Icon(Icons.search), text: 'Search'),
             Tab(icon: Icon(Icons.favorite), text: 'Favorites'),
-            Tab(icon: Icon(Icons.history), text: 'Past'),
+            Tab(icon: Icon(Icons.history), text: 'History'),
             Tab(icon: Icon(Icons.person), text: 'Profile'),
           ],
         ),
