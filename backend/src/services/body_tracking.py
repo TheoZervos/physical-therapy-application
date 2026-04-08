@@ -3,16 +3,18 @@
 Captures live video from the device camera and runs real-time
 pose estimation, detecting 33 body landmarks per frame.
 """
-
+import sys
 import time
 from collections.abc import Generator
 from pathlib import Path
 
 import cv2
+import math
 import mediapipe as mp
 import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+
 
 from src.schemas.pose_schema import LANDMARK_NAMES, Landmark, PoseFrame
 from src.utils.video_utils import get_camera_source, get_video_properties
@@ -175,7 +177,43 @@ class BodyTracker:
 
         return frame, pose_frame
 
-    def _draw_hud(self, frame: np.ndarray, pose_frame: PoseFrame, fps: float) -> np.ndarray:
+    def _calculate_angle(self, pose_frame, joint):
+        JOINT_MAP = { #NOTE: right and left seems backwards?
+            "Right Elbow": (12, 14, 16),
+            "Left Elbow": (11, 13, 15),
+        }
+
+        landmark1, landmark2, landmark3 = JOINT_MAP.get(joint)
+
+        a = (pose_frame.landmarks[landmark1].x, pose_frame.landmarks[landmark1].y)
+        b = (pose_frame.landmarks[landmark2].x, pose_frame.landmarks[landmark2].y)
+        c = (pose_frame.landmarks[landmark3].x, pose_frame.landmarks[landmark3].y)
+
+
+
+        ba = [a[i] - b[i] for i in range(len(a))]
+        bc = [c[i] - b[i] for i in range(len(c))]
+
+        dotProduct = sum(ba[i] * bc[i] for i in range(len(ba)))
+        mag_ba = math.sqrt(sum(x * x for x in ba))
+        mag_bc = math.sqrt(sum(x * x for x in bc))
+
+        cos_angle = dotProduct / (mag_ba * mag_bc)
+        angle = math.degrees(math.acos(cos_angle))
+
+        sys.stdout.write(
+            f"\rAngle: {angle:.3f} | "
+            f"A: x={a[0]:.3f}, y={a[1]:.3f} | "
+            f"B: x={b[0]:.3f}, y={b[1]:.3f} | "
+            f"C: x={c[0]:.3f}, y={c[1]:.3f}    "
+        )
+        sys.stdout.flush()
+        return angle
+
+
+
+
+    def _draw_hud(self, frame: np.ndarray, pose_frame: PoseFrame, fps: float, joint, angle) -> np.ndarray:
         """Draw heads-up display info on the frame.
 
         Args:
@@ -228,6 +266,17 @@ class BodyTracker:
             1,
         )
 
+        #Angle
+        cv2.putText(
+            frame,
+            f":{joint} {angle:.3}",
+            (20, 115),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            1,
+        )
+
         # Instruction at bottom
         cv2.putText(
             frame,
@@ -260,7 +309,7 @@ class BodyTracker:
             timestamp_ms = int((time.time() - self._start_time) * 1000)
             if timestamp_ms <= 0:
                 timestamp_ms = 1
-                
+
             _, pose_frame = self._process_frame(frame, timestamp_ms)
             yield pose_frame
 
@@ -297,7 +346,7 @@ class BodyTracker:
                 timestamp_ms = int(current_time_ms - start_time_ms)
                 if timestamp_ms <= 0:
                     timestamp_ms = 1  # MediaPipe timestamp strictly positive and increasing
-                
+
                 annotated_frame, pose_frame = self._process_frame(frame, timestamp_ms)
 
                 # Calculate FPS
@@ -306,8 +355,13 @@ class BodyTracker:
                 prev_time = current_time
                 self._fps_history.append(fps)
 
+                #Calculate Angle
+                joint = "Left Elbow"
+                angle = self._calculate_angle(pose_frame, joint)
+                #print(angle)
+
                 # Draw HUD
-                annotated_frame = self._draw_hud(annotated_frame, pose_frame, fps)
+                annotated_frame = self._draw_hud(annotated_frame, pose_frame, fps, joint, angle)
 
                 # Display
                 cv2.imshow("Iris Body Tracking", annotated_frame)
