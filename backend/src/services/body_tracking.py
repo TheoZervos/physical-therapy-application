@@ -5,7 +5,7 @@ pose estimation, detecting 33 body landmarks per frame.
 """
 import sys
 import time
-from collections.abc import Generator
+from typing import AsyncGenerator
 from pathlib import Path
 
 import cv2
@@ -18,16 +18,7 @@ from mediapipe.tasks.python import vision
 
 from src.schemas.pose_schema import LANDMARK_NAMES, Landmark, PoseFrame
 from src.utils.video_utils import get_camera_source, get_video_properties
-
-
-# Connections between the 33 MediaPipe pose landmarks for drawing the skeleton
-POSE_CONNECTIONS = [
-    (15, 21), (16, 22), (15, 17), (16, 18), (15, 19), (16, 20), (17, 19), (18, 20),
-    (11, 13), (12, 14), (13, 15), (14, 16), (11, 12), (11, 23), (12, 24), (23, 24),
-    (23, 25), (24, 26), (25, 27), (26, 28), (27, 29), (28, 30), (29, 31), (30, 32),
-    (27, 31), (28, 32), (0, 1), (0, 4), (1, 2), (4, 5), (2, 3), (5, 6), (3, 7),
-    (6, 8), (9, 10)
-]
+from src.utils.drawing_utils import draw_landmarks, draw_hud
 
 
 class BodyTracker:
@@ -56,14 +47,7 @@ class BodyTracker:
         
         # Determine model path based on complexity
         model_type = "lite" if model_complexity == 0 else "full"
-        # Heavy model not downloaded by default to save space, fallback to full if 2 is passed
-        if model_complexity == 2 and not Path(f"../models/pose_landmarker_heavy.task").exists():
-            model_type = "full"
-            print("Heavy model not found, falling back to full model.")
-
-        model_path = Path(__file__).parent.parent.parent.parent / "models" / f"pose_landmarker_{model_type}.task"
-        if not model_path.exists():
-            raise FileNotFoundError(f"Pose landmarker model not found at {model_path}. Please download it.")
+        model_path = f"../models/pose_landmarker_{model_type}.task"
 
         # Initialize MediaPipe PoseLandmarker
         base_options = python.BaseOptions(model_asset_path=str(model_path))
@@ -92,35 +76,6 @@ class BodyTracker:
             props = get_video_properties(self._cap)
             print(f"Camera opened: {props['width']}x{props['height']} @ {props['fps']:.0f} FPS")
             print(f"Backend: {props['backend']}")
-
-    def _draw_landmarks(self, frame: np.ndarray, landmarks: list[Landmark]) -> None:
-        """Draw pose landmarks and connections manually using OpenCV.
-
-        Args:
-            frame: the OpenCV BGR image frame.
-            landmarks: list of Landmark Pydantic models.
-        """
-        h, w = frame.shape[:2]
-        
-        # Draw connections
-        for connection in POSE_CONNECTIONS:
-            start_idx, end_idx = connection
-            if start_idx < len(landmarks) and end_idx < len(landmarks):
-                lm1 = landmarks[start_idx]
-                lm2 = landmarks[end_idx]
-                
-                # Only draw if both points are reasonably visible
-                if lm1.visibility > 0.5 and lm2.visibility > 0.5:
-                    x1, y1 = int(lm1.x * w), int(lm1.y * h)
-                    x2, y2 = int(lm2.x * w), int(lm2.y * h)
-                    cv2.line(frame, (x1, y1), (x2, y2), (255, 255, 255), 2)
-
-        # Draw joints
-        for lm in landmarks:
-            if lm.visibility > 0.5:
-                x, y = int(lm.x * w), int(lm.y * h)
-                cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
-                cv2.circle(frame, (x, y), 5, (255, 255, 255), 1)
 
     def _process_frame(self, frame: np.ndarray, timestamp_ms: int) -> tuple[np.ndarray, PoseFrame]:
         """Run pose detection on a single frame.
@@ -165,9 +120,6 @@ class BodyTracker:
             if landmarks:
                 detection_confidence = sum(lm.visibility for lm in landmarks) / len(landmarks)
 
-            # Draw the skeleton overlay manually
-            self._draw_landmarks(frame, landmarks)
-
         pose_frame = PoseFrame(
             frame_number=self._frame_count,
             timestamp_ms=float(timestamp_ms),
@@ -210,87 +162,7 @@ class BodyTracker:
         sys.stdout.flush()
         return angle
 
-
-
-
-    def _draw_hud(self, frame: np.ndarray, pose_frame: PoseFrame, fps: float, joint, angle) -> np.ndarray:
-        """Draw heads-up display info on the frame.
-
-        Args:
-            frame: The annotated video frame.
-            pose_frame: Current frame's pose data.
-            fps: Current frames per second.
-
-        Returns:
-            Frame with HUD overlay.
-        """
-        h, w = frame.shape[:2]
-
-        # Semi-transparent background for HUD
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (10, 10), (280, 110), (0, 0, 0), -1)
-        cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
-
-        # FPS counter
-        cv2.putText(
-            frame,
-            f"FPS: {fps:.1f}",
-            (20, 35),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (0, 255, 0),
-            2,
-        )
-
-        # Landmark count
-        status = "TRACKING" if pose_frame.has_pose else "NO POSE"
-        color = (0, 255, 0) if pose_frame.has_pose else (0, 0, 255)
-        cv2.putText(
-            frame,
-            f"Status: {status}",
-            (20, 65),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            color,
-            2,
-        )
-
-        # Confidence
-        cv2.putText(
-            frame,
-            f"Confidence: {pose_frame.detection_confidence:.1%}",
-            (20, 95),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 255, 255),
-            1,
-        )
-
-        #Angle
-        cv2.putText(
-            frame,
-            f":{joint} {angle:.3}",
-            (20, 115),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 255, 255),
-            1,
-        )
-
-        # Instruction at bottom
-        cv2.putText(
-            frame,
-            "Press 'q' to quit",
-            (w // 2 - 90, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (200, 200, 200),
-            1,
-        )
-
-        return frame
-
-    def process_stream(self) -> Generator[PoseFrame, None, None]:
+    async def process_stream(self) -> AsyncGenerator[PoseFrame, None, None]:
         """Generator that yields PoseFrame objects from the live camera.
 
         Yields:
@@ -313,7 +185,7 @@ class BodyTracker:
             _, pose_frame = self._process_frame(frame, timestamp_ms)
             yield pose_frame
 
-    def run_with_display(self) -> dict:
+    def run_tracker_with_display(self) -> dict:
         """Run the tracker with a live display window.
 
         Opens an OpenCV window showing the camera feed with skeleton
@@ -348,6 +220,7 @@ class BodyTracker:
                     timestamp_ms = 1  # MediaPipe timestamp strictly positive and increasing
 
                 annotated_frame, pose_frame = self._process_frame(frame, timestamp_ms)
+                draw_landmarks(annotated_frame, pose_frame.landmarks)
 
                 # Calculate FPS
                 current_time = time.time()
@@ -361,7 +234,7 @@ class BodyTracker:
                 #print(angle)
 
                 # Draw HUD
-                annotated_frame = self._draw_hud(annotated_frame, pose_frame, fps, joint, angle)
+                annotated_frame = draw_hud(annotated_frame, pose_frame, fps)
 
                 # Display
                 cv2.imshow("Iris Body Tracking", annotated_frame)
