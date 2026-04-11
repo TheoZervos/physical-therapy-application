@@ -55,7 +55,7 @@ def draw_hud(frame: np.ndarray, pose_frame: PoseFrame, fps: float, angle: float)
 
     # Semi-transparent background for HUD
     overlay = frame.copy()
-    cv2.rectangle(overlay, (10, 10), (280, 110), (0, 0, 0), -1)
+    cv2.rectangle(overlay, (10, 10), (280, 160), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
 
     # FPS counter
@@ -85,7 +85,7 @@ def draw_hud(frame: np.ndarray, pose_frame: PoseFrame, fps: float, angle: float)
     # Right Arm Angle
     cv2.putText(
         frame,
-        f"Angle of Right Elbow: {angle}",
+        f"Right Elbow: {int(angle) if angle is not None else 'N/A'}",
         (20, 95),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.7,
