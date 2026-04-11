@@ -49,7 +49,7 @@ def main() -> None:
             min_tracking_confidence=args.tracking_confidence,
             model_complexity=args.model_complexity,
         )
-        summary = tracker.run_with_display()
+        summary = tracker.run_tracker_with_display()
 
         print("\n--- Session Summary ---")
         print(f"  Total Frames:  {summary['total_frames']}")
